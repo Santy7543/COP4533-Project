@@ -4,12 +4,19 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
+#include <iomanip>
+#include <fstream>
+using namespace std;
 
 class Graph {
 private:
     std::unordered_map<int, std::vector<int>> adjList; // undirected/bi-directional graph
 
 public:
+    void clear() {
+        adjList.clear();
+    }
+
     // Add edge function
     void addEdge(int u, int v) {
         adjList[u].push_back(v);
@@ -27,7 +34,7 @@ public:
         while (!q.empty()) {
             int current = q.front();
             q.pop();
-            std::cout << current << " ";
+            //std::cout << current << " ";
 
             for (int neighbor : adjList[current]) {
                 if (!visited.count(neighbor)) {
@@ -39,7 +46,7 @@ public:
     }
 
     // Measure BFS time
-    void measureBFS(int start) {
+    double measureBFS(int start, int run_number) {
         auto start_time = std::chrono::high_resolution_clock::now();
 
         bfs(start);
@@ -47,7 +54,8 @@ public:
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
 
-        std::cout << "\nTime taken for BFS: " << elapsed.count() << " ms\n";
+        std::cout << "\nTime taken for BFS" << run_number << ": " << elapsed.count() << " ms";
+        return elapsed.count();
     }
 
     // Calculate space used by the graph
@@ -65,12 +73,38 @@ public:
 
 int main() {
     Graph g;
-    for (int i = 0; i < 1000; ++i) {
-        g.addEdge(i, i + 1);
+
+    ofstream dataFile("bfs_results.csv");
+    dataFile << "Size,Time(ms),Space(bytes)\n";
+
+    vector<int> sizes = {100, 1000, 10000, 100000};    
+
+    for (int size : sizes) {
+        for (int i = 0; i < size; ++i) {
+            g.addEdge(i, i + 1);
+        }
+
+        cout << "\nTesting graph with " << size << " nodes: " << endl;
+
+        double total_time = 0;
+        for (int run = 0; run < 3; run++) {
+            double time = g.measureBFS(0, run + 1);
+            total_time += time;
+        }
+        cout << endl;
+        
+        double average_time = total_time / 3;
+        size_t space = g.calculateSpace();
+
+        cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
+        cout << "Space used: " << space << " bytes" << endl;
+
+        dataFile << size << "," << average_time << "," << space << "\n";
+
+        g.clear();
     }
 
-    std::cout << "BFS starting from node 0:\n";
-    g.measureBFS(0);\
-    std::cout << "Space used by the graph: " << g.calculateSpace() << " bytes\n";
+    dataFile.close();
+    cout << "\nResults have been printed to 'bfs_results.csv'" << endl;
     return 0;
 }

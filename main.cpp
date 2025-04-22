@@ -8,6 +8,11 @@
 #include <fstream>
 using namespace std;
 
+struct PeakMemory {
+    size_t peak_mem_bytes;
+};
+
+// Graph class implementing BFS traversal with performance measurements
 class Graph {
 private:
     std::unordered_map<int, std::vector<int>> adjList; // undirected/bi-directional graph
@@ -70,7 +75,7 @@ public:
         return elapsed.count();
     }
 
-    // Calculate space used by the graph
+    // Calculate static space used by the graph
     size_t calculateSpace() {
         size_t space = 0;
 
@@ -80,6 +85,46 @@ public:
 
         return space;
     }
+
+    // Calculate peak memory used by BFS    
+    PeakMemory bfsWithPeakMem(int start) {
+        unordered_set<int> visited;
+        queue<int> q;
+        size_t peak_memory = 0;
+
+        visited.insert(start);
+        q.push(start);
+
+        while (!q.empty()) {
+            // Calculate current memory usage
+            size_t current_memory = 0;
+            current_memory += visited.size() * sizeof(int); // Memory for the visited set
+            current_memory += q.size() * sizeof(int); // Memory for the queue
+            
+            // If current memory usage is higher than peak, update the peak
+            peak_memory = std::max(peak_memory, current_memory);
+
+            int current = q.front();
+            q.pop();
+
+            for (int neighbor : adjList[current]) {
+                if (!visited.count(neighbor)) {
+                    visited.insert(neighbor);
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        return {peak_memory};
+    }
+
+    // Measure BFS peak memory usage
+    PeakMemory measurePeakMem(int start, int run_number) {
+        PeakMemory metrics = bfsWithPeakMem(start);
+        cout << "\nPeak memory during BFS" << run_number << ": " << metrics.peak_mem_bytes << " bytes";
+        return metrics;
+    }
+
 };
 
 
@@ -89,8 +134,18 @@ int main() {
     ofstream sparseFile("sparse_bfs_results.csv");
     ofstream denseFile("dense_bfs_results.csv");
 
-    sparseFile << "Size,Time(ms),Space(bytes)\n";
-    denseFile << "Size,Time(ms),Space(bytes)\n";
+    if (!sparseFile.is_open()) {
+        cerr << "Error: Could not open 'sparse_bfs_results.csv'" << endl;
+        return 1;
+    }
+    if (!denseFile.is_open()) {
+        cerr << "Error: Could not open 'dense_bfs_results.csv'" << endl;
+        sparseFile.close();
+        return 1;
+    }
+
+    sparseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
+    denseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
 
 
     vector<int> sparse_sizes = {100, 1000, 2500, 5000, 10000};    
@@ -104,19 +159,24 @@ int main() {
         std::cout << "\nTesting graph with " << size << " nodes: " << endl;
 
         double total_time = 0;
+        size_t total_peak_memory = 0;
         for (int run = 0; run < sparse_sizes.size(); run++) {
             double time = g.measureBFS(0, run + 1);
+            PeakMemory mem = g.measurePeakMem(0, run + 1);
             total_time += time;
+            total_peak_memory += mem.peak_mem_bytes;
         }
         std::cout << endl;
         
-        double average_time = total_time / 3;
-        size_t space = g.calculateSpace();
+        double average_time = total_time / sparse_sizes.size();
+        size_t average_peak_memory = total_peak_memory / sparse_sizes.size();
+        size_t static_space = g.calculateSpace();
 
         std::cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
-        std::cout << "Space used: " << space << " bytes" << endl;
+        std::cout << "Static space: " << static_space << " bytes" << endl;
+        std::cout << "Average peak memory: " << average_peak_memory << " bytes" << endl;
 
-        sparseFile << size << "," << average_time << "," << space << "\n";
+        sparseFile << size << "," << average_time << "," << static_space << "," << average_peak_memory << "\n";
 
         g.clear();
     }
@@ -128,25 +188,30 @@ int main() {
         std::cout << "\nTesting graph with " << size << " nodes: " << endl;
 
         double total_time = 0;
+        size_t total_peak_memory = 0;
         for (int run = 0; run < dense_sizes.size(); run++) {
             double time = g.measureBFS(0, run + 1);
+            PeakMemory mem = g.measurePeakMem(0, run + 1);
             total_time += time;
+            total_peak_memory += mem.peak_mem_bytes;
         }
         std::cout << endl;
         
-        double average_time = total_time / 3;
-        size_t space = g.calculateSpace();
+        double average_time = total_time / dense_sizes.size();
+        size_t average_peak_memory = total_peak_memory / dense_sizes.size();
+        size_t static_space = g.calculateSpace();
 
         std::cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
-        std::cout << "Space used: " << space << " bytes" << endl;
+        std::cout << "Static space: " << static_space << " bytes" << endl;
+        std::cout << "Average peak memory: " << average_peak_memory << " bytes" << endl;
 
-        denseFile << size << "," << average_time << "," << space << "\n";
+        denseFile << size << "," << average_time << "," << static_space << "," << average_peak_memory << "\n";
 
         g.clear();
     }
 
     sparseFile.close();
     denseFile.close();
-    std::cout << "\nResults have been printed to 'sparse/dense_bfs_results" << endl;
+    std::cout << "\nResults have been printed to 'sparse_bfs_results' and 'dense_bfs_results'" << endl;
     return 0;
 }

@@ -1,0 +1,8 @@
+# Output files
+*.csv
+*.exe
+
+# Build files
+*.o
+*.obj
+*.out 

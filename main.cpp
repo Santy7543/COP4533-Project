@@ -23,6 +23,18 @@ public:
         adjList[v].push_back(u);
     }
 
+    // Adds dense edges
+    // size is the number of vertices in the graph
+    // k controls how many neighbors each vertex will be connected to 
+    // For each vertex i, it connects to the next k vertices: (i+1), (i+2), ..., (i+k), as long as they are within bounds: <= (i+j)
+    void addDenseEdges(Graph& g, int size, int k) {
+        for (int i = 0; i < size; ++i) {
+            for (int j = 1; j <= k && i + j < size; ++j) {
+                g.addEdge(i, i + j);
+            }
+        }
+    }
+
     // BFS function
     void bfs(int start) {
         std::unordered_set<int> visited;
@@ -74,37 +86,67 @@ public:
 int main() {
     Graph g;
 
-    ofstream dataFile("bfs_results.csv");
-    dataFile << "Size,Time(ms),Space(bytes)\n";
+    ofstream sparseFile("sparse_bfs_results.csv");
+    ofstream denseFile("dense_bfs_results.csv");
 
-    vector<int> sizes = {100, 1000, 10000, 100000};    
+    sparseFile << "Size,Time(ms),Space(bytes)\n";
+    denseFile << "Size,Time(ms),Space(bytes)\n";
 
-    for (int size : sizes) {
+
+    vector<int> sparse_sizes = {100, 1000, 2500, 5000, 10000};    
+    vector<int> dense_sizes = {100, 1000, 2500, 5000}; // avoid huge sizes for dense
+
+    for (int size : sparse_sizes) {
         for (int i = 0; i < size; ++i) {
             g.addEdge(i, i + 1);
         }
 
-        cout << "\nTesting graph with " << size << " nodes: " << endl;
+        std::cout << "\nTesting graph with " << size << " nodes: " << endl;
 
         double total_time = 0;
-        for (int run = 0; run < 3; run++) {
+        for (int run = 0; run < sparse_sizes.size(); run++) {
             double time = g.measureBFS(0, run + 1);
             total_time += time;
         }
-        cout << endl;
+        std::cout << endl;
         
         double average_time = total_time / 3;
         size_t space = g.calculateSpace();
 
-        cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
-        cout << "Space used: " << space << " bytes" << endl;
+        std::cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
+        std::cout << "Space used: " << space << " bytes" << endl;
 
-        dataFile << size << "," << average_time << "," << space << "\n";
+        sparseFile << size << "," << average_time << "," << space << "\n";
 
         g.clear();
     }
 
-    dataFile.close();
-    cout << "\nResults have been printed to 'bfs_results.csv'" << endl;
+    for (int size : dense_sizes) {
+        int k = size / 10; // 10% dense
+
+        g.addDenseEdges(g, size, k);
+        std::cout << "\nTesting graph with " << size << " nodes: " << endl;
+
+        double total_time = 0;
+        for (int run = 0; run < dense_sizes.size(); run++) {
+            double time = g.measureBFS(0, run + 1);
+            total_time += time;
+        }
+        std::cout << endl;
+        
+        double average_time = total_time / 3;
+        size_t space = g.calculateSpace();
+
+        std::cout << "Average time: " << fixed << setprecision(3) << average_time << " ms" << endl;
+        std::cout << "Space used: " << space << " bytes" << endl;
+
+        denseFile << size << "," << average_time << "," << space << "\n";
+
+        g.clear();
+    }
+
+    sparseFile.close();
+    denseFile.close();
+    std::cout << "\nResults have been printed to 'sparse/dense_bfs_results" << endl;
     return 0;
 }

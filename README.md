@@ -14,12 +14,14 @@ Required:
 Note: Using Anaconda is recommended as it has Python and all required libraries (matplotlib and pandas) pre-installed.
 
 ## How to Run
+plot.py will automatically compile and run main.cpp and display the visualizations once ran. 
+If that does not work then:
 1. Compile and run the C++ implementation:
    ```
    g++ main.cpp -o graph_bfs
    ./graph_bfs
    ```
-2. Run the visualization:
+2. Comment out lines 6 and 7 of plot.py and run the visualization:
    ```
    python plot.py
    ```
@@ -32,9 +34,9 @@ Note: Running in Anaconda Prompt ensures all required Python libraries are avail
     - Static space is measured (graph structure memory)
     - Peak memory is tracked during the BFS traversal
 - Graphic Visualization of time complexity:
-    - Sparse Graph: Each node only connects to adjacent nodes to create a linear structure
-    - Dense Graph: Each node connects to multiple others to create an interconnected structure
-- CSV output for result analysis
+    - Sparse Graph: Each node only connects to adjacent nodes to create a linked-list-like structure
+    - Dense Graph: Each node connects to k others to create an interconnected structure
+- CSV output for result analysis using pandas and matplotlib
 
 ## Output
 - The program tests BFS on different graph sizes

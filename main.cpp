@@ -71,8 +71,10 @@ public:
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
 
-        std::cout << "\nTime taken for BFS" << run_number << ": " << elapsed.count() << " ms";
-        return elapsed.count();
+        double time_taken = elapsed.count();
+
+        std::cout << "\nTime taken for BFS" << run_number << ": " << time_taken << " ms";
+        return time_taken;
     }
 
     // Calculate static space used by the graph
@@ -134,23 +136,20 @@ int main() {
     ofstream sparseFile("sparse_bfs_results.csv");
     ofstream denseFile("dense_bfs_results.csv");
 
-    if (!sparseFile.is_open()) {
-        cerr << "Error: Could not open 'sparse_bfs_results.csv'" << endl;
-        return 1;
-    }
-    if (!denseFile.is_open()) {
-        cerr << "Error: Could not open 'dense_bfs_results.csv'" << endl;
+    if (!sparseFile.is_open() || !denseFile.is_open()) {
+        cerr << "Error: Could not open output files" << endl;
         sparseFile.close();
+        denseFile.close();
         return 1;
-    }
 
     sparseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
     denseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
 
 
     vector<int> sparse_sizes = {100, 1000, 2500, 5000, 10000};    
-    vector<int> dense_sizes = {100, 1000, 2500, 5000}; // avoid huge sizes for dense
+    vector<int> dense_sizes = {100, 1000, 2500, 5000, 10000};
 
+    // Sparse graph: each node connected to the next one (like a linked list)
     for (int size : sparse_sizes) {
         for (int i = 0; i < size; ++i) {
             g.addEdge(i, i + 1);
@@ -180,7 +179,8 @@ int main() {
 
         g.clear();
     }
-
+    
+    // Dense graph: each node connected to the next k nodes (10% dense)
     for (int size : dense_sizes) {
         int k = size / 10; // 10% dense
 

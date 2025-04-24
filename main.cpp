@@ -141,7 +141,7 @@ int main() {
         sparseFile.close();
         denseFile.close();
         return 1;
-
+    }
     sparseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
     denseFile << "Size,Time(ms),Static_Space(bytes),Peak_Memory(bytes)\n";
 
